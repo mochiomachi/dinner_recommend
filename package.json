@@ -1,0 +1,21 @@
+{
+	"name": "dinner-recommend",
+	"version": "0.0.0",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy --config wrangler.toml",
+		"dev": "wrangler dev --config wrangler.toml",
+		"start": "wrangler dev",
+		"test": "vitest",
+		"cf-typegen": "wrangler types",
+		"import-sample-data": "node scripts/import-csv-data.js",
+		"logs": "wrangler tail"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"typescript": "^5.5.2",
+		"vitest": "~3.0.7",
+		"wrangler": "^4.19.1"
+	}
+}
