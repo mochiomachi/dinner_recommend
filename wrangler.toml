@@ -8,4 +8,4 @@ database_name = "dinner-recommend-db"
 database_id = "24c3e9c4-70f3-4afa-bf26-961adab00e33"
 
 [triggers]
-crons = ["0 14 * * *"]
+crons = ["0 5 * * *"]

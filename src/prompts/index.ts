@@ -16,6 +16,28 @@ export function renderPrompt(template: string, variables: PromptVariables): stri
   return rendered;
 }
 
+// マークダウンプロンプトを読み込み・レンダリングする関数
+export async function loadAndRenderMarkdownPrompt(
+  filename: string, 
+  variables: PromptVariables
+): Promise<string> {
+  try {
+    // Cloudflare Workers環境では、ファイルを直接読み込めないため
+    // プロンプトをインラインで定義する必要があります
+    const { MARKDOWN_PROMPTS } = await import('./markdown-prompts');
+    const template = MARKDOWN_PROMPTS[filename];
+    
+    if (!template) {
+      throw new Error(`Prompt template ${filename} not found`);
+    }
+    
+    return renderPrompt(template, variables);
+  } catch (error) {
+    console.error(`Error loading prompt ${filename}:`, error);
+    throw error;
+  }
+}
+
 // プロンプトテンプレート定義
 export const PROMPTS = {
   // 初回推薦
@@ -107,6 +129,66 @@ export const PROMPTS = {
 3. **[料理名]** - [前回との違い・ご要望との関連]
 
 気になる料理の番号を送ってくれれば、詳しいレシピをお教えします！`
+  },
+
+  // エージェント機能
+  AGENT: {
+    USER_REQUEST_ANALYSIS: `以下のメッセージが再提案要求かどうかを判定し、タイプを分類してください。
+
+メッセージ: "{{message}}"
+
+分類基準:
+- diverse: "他の提案", "違うの", "別の料理" など、多様性を求める
+- light: "あっさり", "さっぱり", "軽いもの" など、軽い料理を求める  
+- hearty: "がっつり", "しっかり", "ボリューム" など、重い料理を求める
+- different: "前回と違う", "似てない", "変化" など、前回との差別化を求める
+- general: その他の一般的な再提案要求
+
+JSON形式で回答してください:
+{
+  "type": "diverse|light|hearty|different|general",
+  "isRecommendationRequest": true/false
+}`,
+
+    DIVERSE_RECOMMENDATION: `食事推薦エージェントとして、ユーザーの要求に基づいて多様性のある料理を3品提案してください。
+
+## ユーザー情報
+- アレルギー: {{allergies}}
+- 苦手な食べ物: {{dislikes}}
+
+## 最近の食事履歴
+{{recentMeals}}
+
+## ユーザー要求
+- タイプ: {{requestType}}
+- 元メッセージ: "{{originalMessage}}"
+
+## 回避すべき要素 (前回提案との重複回避)
+- 避ける食材: {{avoidIngredients}}
+- 避けるジャンル: {{avoidGenres}}  
+- 避ける調理法: {{avoidCookingMethods}}
+
+## 天気情報
+{{weather}}
+
+## 提案ルール
+1. 前回提案と完全に異なる軸で選択する
+2. 3品は互いに主材料・ジャンル・調理法が重複しないようにする
+3. ユーザー要求タイプに応じた特性を持たせる
+4. 季節・天気に適した料理を優先する
+
+JSON形式で回答してください:
+{
+  "recommendations": [
+    {
+      "dish": "料理名",
+      "genre": "和食/洋食/中華/エスニック等",
+      "mainIngredient": "主材料", 
+      "cookingMethod": "調理法",
+      "reason": "選択理由"
+    }
+  ]
+}`
   },
 
   // 分析系
